@@ -1,0 +1,10 @@
+import test from 'node:test';
+import assert from 'node:assert/strict';
+import {validate,buildMessage,whatsappUrl,todayLocal} from './quote.js';
+import {initialForm} from './config.js';
+const valid={...initialForm,service:'residentiel',property:'Maison',date:'2026-10-20',name:'Essai Démonstration',phone:'514-555-0100',city:'Secteur de démonstration'};
+test('champs obligatoires et date du jour',()=>{assert.equal(Object.keys(validate(initialForm,'2026-10-20')).length,6);assert.deepEqual(validate(valid,'2026-10-20'),{});});
+test('date passée, courriel et superficie invalides',()=>{const errors=validate({...valid,date:'2026-10-19',email:'incorrect',area:'-1'},'2026-10-20');assert.ok(errors.date);assert.ok(errors.email);assert.ok(errors.area);});
+test('propriété et service cohérents',()=>assert.ok(validate({...valid,service:'bureaux'},'2026-10-20').property));
+test('message conditionnel et lien encodé',()=>{const message=buildMessage({...valid,bedrooms:'2',notes:'Fenêtres & miroirs : à discuter'});assert.ok(message.includes('Nombre de chambres : 2'));assert.equal(new URL(whatsappUrl(message)).searchParams.get('text'),message);assert.ok(!buildMessage({...valid,service:'bureaux',property:'Bureau',bedrooms:'2'}).includes('Nombre de chambres'));});
+test('date locale sans conversion UTC',()=>assert.equal(todayLocal(new Date(2026,9,20,23,59)),'2026-10-20'));
